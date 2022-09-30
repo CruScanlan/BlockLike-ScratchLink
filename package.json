@@ -16,7 +16,8 @@
     "mini": "webpack --progress --config webpack.config-mini.js && node scripts/mini.js",
     "docs": "npx jsdoc dist/blocklike-*.*.*.js --destination ./docs --template node_modules/minami --readme Docs-README.md",
     "build": "npm run test && npm run full && npm run mini && npm run docs",
-    "version": "node scripts/version.js & npm run build && git add ."
+    "version": "node scripts/version.js & npm run build && git add .",
+    "types": "tsc --allowJs -d --emitDeclarationOnly ./src/lib.js && dts-bundle --name blocklike --main ./src/lib.d.ts"
   },
   "keywords": [
     "blocklike",
@@ -57,5 +58,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/ronilan/BlockLike.git"
+  },
+  "dependencies": {
+    "dts-bundle": "^0.7.3"
   }
 }
