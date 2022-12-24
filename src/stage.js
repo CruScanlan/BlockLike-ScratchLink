@@ -3,6 +3,7 @@ import Entity from './entity'
 import StageElement from './stage-element'
 import StageSurface from './stage-surface'
 import SpriteElement from './sprite-element'
+import collisionDetector from './collision-detector'
 
 import sensing from './stage-sensing'
 
@@ -77,6 +78,8 @@ export default class Stage extends Entity {
 
     actual.sensing ? sensing(this) : null
 
+    this.collisionDetector = collisionDetector.init(this)
+
     this.element.update(this)
   }
 
@@ -121,6 +124,8 @@ export default class Stage extends Entity {
     curSprite.z = this.sprites.length
 
     sprite.element.update(curSprite)
+
+    this.collisionDetector.refreshSpriteBitmapCache()
   }
 
   /**

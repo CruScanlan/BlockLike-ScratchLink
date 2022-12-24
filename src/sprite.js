@@ -5,6 +5,8 @@ import SpriteElement from './sprite-element'
 import Costume from './costume'
 import TextUiElement from './text-ui-element'
 
+import collisionDetector from './collision-detector'
+
 /**
  * Class representing a Sprite.
  * Sprites can be added to the Stage.
@@ -139,6 +141,8 @@ export default class Sprite extends Entity {
 
     this.cssRules = []
     this.classes = []
+
+    this.collisionDetector = collisionDetector
   }
 
   /** Setup Actions * */
@@ -493,6 +497,8 @@ export default class Sprite extends Entity {
   pointInDirection (deg) {
     deg > 0 ? this.direction = deg % 360 : this.direction = (deg + (360 * 10)) % 360
     this.element ? this.element.update(this) : null
+
+    this.collisionDetector.refreshSpriteBitmapCache()
   }
 
   /**
@@ -546,6 +552,7 @@ export default class Sprite extends Entity {
 
     this.direction = computeDirectionTo(this.x, this.y, sprite.x, sprite.y)
     this.element ? this.element.update(this) : null
+    this.collisionDetector.refreshSpriteBitmapCache()
   }
 
   /**
@@ -565,6 +572,7 @@ export default class Sprite extends Entity {
   turnRight (deg) {
     this.direction = (this.direction + deg) % 360
     this.element ? this.element.update(this) : null
+    this.collisionDetector.refreshSpriteBitmapCache()
   }
 
   /**
@@ -584,6 +592,7 @@ export default class Sprite extends Entity {
   turnLeft (deg) {
     this.direction = ((this.direction + 360) - deg) % 360
     this.element ? this.element.update(this) : null
+    this.collisionDetector.refreshSpriteBitmapCache()
   }
 
   /**
@@ -628,6 +637,8 @@ export default class Sprite extends Entity {
     }
 
     this.element ? this.element.update(this) : null
+
+    this.collisionDetector.refreshSpriteBitmapCache()
   }
 
   /**
@@ -806,6 +817,7 @@ export default class Sprite extends Entity {
       me.setSize(me.magnification)
       // then refresh the DOM.
       me.element ? me.element.update(me) : null
+      this.collisionDetector.refreshSpriteBitmapCache()
     }, this.pace)
   }
 
@@ -901,6 +913,8 @@ export default class Sprite extends Entity {
 
       this.element ? this.element.update(this) : null
     }
+
+    this.collisionDetector.refreshSpriteBitmapCache()
   }
 
   /**
@@ -1310,7 +1324,7 @@ export default class Sprite extends Entity {
   * @return {string} - the side of the sprite that is touched (null, top, bottom, left, right)
   */
   touching (sprite) {
-    let result = null
+    /* let result = null
 
     if (
       this.x + (this.width / 2) > sprite.x - (sprite.width / 2) &&
@@ -1322,9 +1336,29 @@ export default class Sprite extends Entity {
       this.x < sprite.x ? result = 'right' : null
       this.y > sprite.y && Math.abs(this.y - sprite.y) > Math.abs(this.x - sprite.x) ? result = 'bottom' : null
       this.y < sprite.y && Math.abs(this.y - sprite.y) > Math.abs(this.x - sprite.x) ? result = 'top' : null
-    }
+    } */
 
-    return result
+    const startTime = performance.now()
+    const collided = this.collisionDetector.doSpritesOverlap(
+      {
+        image: this.costume.image,
+        x: this.x,
+        y: this.y,
+        w: this.width,
+        h: this.height
+      },
+      {
+        image: sprite.costume.image,
+        x: sprite.x,
+        y: sprite.y,
+        w: sprite.width,
+        h: sprite.height
+      }
+    )
+
+    console.log(`Process Time: ${performance.now() - startTime}`)
+
+    return collided
   }
 
   /**
