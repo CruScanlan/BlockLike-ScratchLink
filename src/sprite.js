@@ -1338,7 +1338,7 @@ export default class Sprite extends Entity {
       this.y < sprite.y && Math.abs(this.y - sprite.y) > Math.abs(this.x - sprite.x) ? result = 'top' : null
     } */
 
-    const startTime = performance.now()
+    // const startTime = performance.now()
     const collided = this.collisionDetector.doSpritesOverlap(
       {
         image: this.costume.image,
@@ -1356,7 +1356,7 @@ export default class Sprite extends Entity {
       }
     )
 
-    console.log(`Process Time: ${performance.now() - startTime}`)
+    // console.log(`Process Time: ${performance.now() - startTime}`)
 
     return collided
   }

@@ -47,6 +47,19 @@ class CollisonDetector {
       this.canvasElement1 = el
       this.canvasContext1 = this.canvasElement1.getContext('2d')
 
+      /* document.addEventListener('keyup', (e) => {
+        if (e.code === 'ControlLeft') {
+          if (window.move) {
+            console.log('download canvas')
+            const link = document.createElement('a')
+            link.setAttribute('download', 'canvas.png')
+            link.setAttribute('href', this.canvasElement1.toDataURL('image/png').replace('image/png', 'image/octet-stream'))
+            link.click()
+          }
+          window.move = !window.move
+        }
+      }) */
+
       return el
     }
 
@@ -87,32 +100,48 @@ class CollisonDetector {
       const image = await this.loadImageFromUrl(imageUrl)
 
       const canvas = document.createElement('canvas')
-      const size = Math.sqrt(Math.pow(image.width, 2) + Math.pow(image.height, 2)) // Get diagonal as the size so no matter the rotation, the image will fit inside the box
 
-      canvas.width = size
-      canvas.height = size
+      canvas.width = sprite.width
+      canvas.height = sprite.height
       const ctx = canvas.getContext('2d')
+
+      const ratio = image.width / image.height
+      let drawWidth = image.width
+      let drawHeight = image.height
+      if (image.width / sprite.width > image.height / sprite.height) {
+        drawWidth = sprite.width
+        drawHeight = sprite.width / ratio
+      } else {
+        drawWidth = sprite.height * ratio
+        drawHeight = sprite.height
+      }
 
       ctx.translate(canvas.width / 2, canvas.height / 2)
       ctx.rotate((sprite.direction - 90) * Math.PI / 180)
-      ctx.drawImage(image, -image.width / 2, -image.height / 2)
+      ctx.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight)
       const bitmapData = canvas.toDataURL('image/png')
 
-      await this.saveImageFromBitmap(imageUrl, bitmapData, size)
+      await this.saveImageFromBitmap(
+        imageUrl,
+        bitmapData,
+        {
+          w: sprite.width,
+          h: sprite.height
+        }
+      )
     }
 
-    console.log('Generated Bitmaps', this.currentSpriteBitmaps)
+    // console.log('Generated Bitmaps', this.currentSpriteBitmaps)
   }
 
-  async saveImageFromBitmap (url, bitmapData, size) {
+  async saveImageFromBitmap (url, bitmapData, sizeData) {
     return new Promise(resolve => {
       const imageData = new Image()
       imageData.src = bitmapData
       imageData.onload = async () => {
         this.currentSpriteBitmaps[url] = {
           data: await createImageBitmap(imageData),
-          w: size,
-          h: size
+          ...sizeData
         }
         resolve()
       }
@@ -139,10 +168,16 @@ class CollisonDetector {
 
     if (!spriteBitmap1 || !spriteBitmap1.data || !spriteBitmap2 || !spriteBitmap2.data) return false // does not have image data
 
+    spriteData1.x = spriteData1.x - (spriteData1.w / 2)
+    spriteData1.y = (spriteData1.y * -1) - (spriteData1.h / 2)
+
+    spriteData2.x = spriteData2.x - (spriteData2.w / 2)
+    spriteData2.y = (spriteData2.y * -1) - (spriteData2.h / 2)
+
     // check if they overlap
     if (
-      spriteData1.x > spriteData2.x + spriteBitmap2.w ||
-      spriteData1.x + spriteBitmap1.w < spriteData2.x ||
+      spriteData1.x > spriteData2.x + spriteData2.w ||
+      spriteData1.x + spriteData1.w < spriteData2.x ||
       spriteData1.y > spriteData2.y + spriteData2.h ||
       spriteData1.y + spriteData1.h < spriteData2.y
     ) return false // no overlap
@@ -151,12 +186,12 @@ class CollisonDetector {
     // find left edge
     const ax = spriteData1.x < spriteData2.x ? spriteData2.x : spriteData1.x
     // find right edge calculate width
-    let aw = spriteData1.x + spriteBitmap1.w < spriteData2.x + spriteBitmap2.w ? (spriteData1.x + spriteBitmap1.w) - ax : (spriteData2.x + spriteBitmap2.w) - ax
+    let aw = spriteData1.x + spriteData1.w < spriteData2.x + spriteData2.w ? (spriteData1.x + spriteData1.w) - ax : (spriteData2.x + spriteData2.w) - ax
     // do the same for top and bottom
     const ay = spriteData1.y < spriteData2.y ? spriteData2.y : spriteData1.y
     let ah = spriteData1.y + spriteData1.h < spriteData2.y + spriteData2.h ? (spriteData1.y + spriteData1.h) - ay : (spriteData2.y + spriteData2.h) - ay
 
-    if (aw === 0 || ah === 0) return false // no overlap, on edge
+    if (aw < 1 || ah < 1) return false // no overlap, on edge
 
     this.canvasContext1.clearRect(0, 0, this.canvasSize1.w, this.canvasSize1.h)
     this.canvasContext2.clearRect(0, 0, this.canvasSize2.w, this.canvasSize2.h)
@@ -167,7 +202,7 @@ class CollisonDetector {
       h: ah
     })
     this.canvasElement1.width = aw
-    this.canvasElement1.height = aw
+    this.canvasElement1.height = ah
     this.canvasContext1 = this.canvasElement1.getContext('2d')
 
     // draw the first image relative to the overlap area
@@ -175,9 +210,9 @@ class CollisonDetector {
     // only pixels will remain if both images are not trasparent
     this.canvasContext1.globalCompositeOperation = 'destination-in'
     this.canvasContext1.drawImage(spriteBitmap2.data, spriteData2.x - ax, spriteData2.y - ay)
-    this.canvasContext1.globalCompositeOperation = 'source-over'
 
     // now draw over its self to amplify any pixels that have low alpha
+    this.canvasContext1.globalCompositeOperation = 'source-over'
     for (let i = 0; i < 32; i++) {
       this.canvasContext1.drawImage(this.canvasElement1, 0, 0)
     }
@@ -187,6 +222,7 @@ class CollisonDetector {
       w: Math.max(1, Math.floor(aw / 8)),
       h: Math.max(1, Math.floor(ah / 8))
     })
+
     let rw = this.canvasSize2.w
     let rh = this.canvasSize2.h
     this.canvasElement2.width = rw
@@ -238,3 +274,23 @@ class CollisonDetector {
 }
 
 export default new CollisonDetector()
+
+/*
+
+if (
+    spriteData1.x > spriteData2.x + spriteBitmap2.w ||
+    spriteData1.x + spriteBitmap1.w < spriteData2.x ||
+    spriteData1.y > spriteData2.y + spriteData2.h ||
+    spriteData1.y + spriteData1.h < spriteData2.y
+) return false // no overlap
+
+// size of overlapping area
+// find left edge
+const ax = spriteData1.x < spriteData2.x ? spriteData2.x : spriteData1.x
+// find right edge calculate width
+let aw = spriteData1.x + spriteBitmap1.w < spriteData2.x + spriteBitmap2.w ? (spriteData1.x + spriteBitmap1.w) - ax : (spriteData2.x + spriteBitmap2.w) - ax
+// do the same for top and bottom
+const ay = spriteData1.y < spriteData2.y ? spriteData2.y : spriteData1.y
+let ah = spriteData1.y + spriteData1.h < spriteData2.y + spriteData2.h ? (spriteData1.y + spriteData1.h) - ay : (spriteData2.y + spriteData2.h) - ay
+
+    */
