@@ -92,17 +92,7 @@ class CollisonDetector {
       el.style.top = this.stage.height
 
       this.edgeCanvasElement = el
-      this.edgeCanvasContext = this.edgeCanvasElement.getContext('2d')
-
-      document.addEventListener('keyup', (e) => {
-        if (e.code === 'ControlLeft') {
-          console.log('download canvas')
-          const link = document.createElement('a')
-          link.setAttribute('download', 'canvas.png')
-          link.setAttribute('href', this.edgeCanvasElement.toDataURL('image/png').replace('image/png', 'image/octet-stream'))
-          link.click()
-        }
-      })
+      this.edgeCanvasContext = this.edgeCanvasElement.getContext('2d', { willReadFrequently: true })
 
       return el
     }

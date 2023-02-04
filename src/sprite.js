@@ -1255,13 +1255,17 @@ export default class Sprite extends Entity {
   * @return {string} - the side of the stage that is touched (null, top, bottom, left, right)
   */
   touchingEdge () {
-    return this.collisionDetector.isSpriteTouchingEdge({
+    // const startTime = performance.now()
+    const collided = this.collisionDetector.isSpriteTouchingEdge({
       image: this.costume.image,
       x: this.x,
       y: this.y,
       w: this.width,
       h: this.height
     })
+    // console.log(`Process Time: ${performance.now() - startTime}`)
+
+    return collided
   }
 
   /**
