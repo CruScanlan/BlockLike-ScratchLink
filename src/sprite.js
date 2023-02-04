@@ -1255,22 +1255,13 @@ export default class Sprite extends Entity {
   * @return {string} - the side of the stage that is touched (null, top, bottom, left, right)
   */
   touchingEdge () {
-    let result = null
-
-    if ((this.x) + (this.width / 2) > this.stageWidth / 2) {
-      result = 'right'
-    }
-    if ((this.x) - (this.width / 2) < -1 * (this.stageWidth / 2)) {
-      result = 'left'
-    }
-    if ((this.y) + (this.height / 2) > this.stageHeight / 2) {
-      result = 'top'
-    }
-    if ((this.y) - (this.height / 2) < -1 * (this.stageHeight / 2)) {
-      result = 'bottom'
-    }
-
-    return result
+    return this.collisionDetector.isSpriteTouchingEdge({
+      image: this.costume.image,
+      x: this.x,
+      y: this.y,
+      w: this.width,
+      h: this.height
+    })
   }
 
   /**
@@ -1324,20 +1315,6 @@ export default class Sprite extends Entity {
   * @return {string} - the side of the sprite that is touched (null, top, bottom, left, right)
   */
   touching (sprite) {
-    /* let result = null
-
-    if (
-      this.x + (this.width / 2) > sprite.x - (sprite.width / 2) &&
-      this.x - (this.width / 2) < sprite.x + (sprite.width / 2) &&
-      this.y + (this.height / 2) > sprite.y - (sprite.height / 2) &&
-      this.y - (this.height / 2) < sprite.y + (sprite.height / 2)
-    ) {
-      this.x >= sprite.x ? result = 'left' : null
-      this.x < sprite.x ? result = 'right' : null
-      this.y > sprite.y && Math.abs(this.y - sprite.y) > Math.abs(this.x - sprite.x) ? result = 'bottom' : null
-      this.y < sprite.y && Math.abs(this.y - sprite.y) > Math.abs(this.x - sprite.x) ? result = 'top' : null
-    } */
-
     // const startTime = performance.now()
     const collided = this.collisionDetector.doSpritesOverlap(
       {
@@ -1355,7 +1332,6 @@ export default class Sprite extends Entity {
         h: sprite.height
       }
     )
-
     // console.log(`Process Time: ${performance.now() - startTime}`)
 
     return collided
