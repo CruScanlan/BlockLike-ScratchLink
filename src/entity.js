@@ -98,7 +98,8 @@ export default class Entity {
       'whenKeyPressed',
       'whenEvent',
       'whenReceiveMessage',
-      'whenCloned'
+      'whenCloned',
+      'addEventListener'
     ]
   }
 

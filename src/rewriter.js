@@ -188,6 +188,7 @@ function insertAsync (item) {
     regExp = /([a-zA-Z]\w*|\(\s*?[a-zA-Z]\w*(,\s*[a-zA-Z]\w*)*\s*?\))\s*?=>/
     matches = regExp.exec(replaceUserStringWithBlanks(item))
   }
+
   return exist === -1 && matches ? `${item.substring(0, matches.index)}async ${item.substring(matches.index, item.length)}` : item
 }
 
@@ -225,7 +226,15 @@ function removeOuter (funcS) {
 * @return {string} - the function without comments.
 */
 function removeComments (funcS) {
-  return funcS.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
+  return funcS.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, (match, p1) => {
+    // If this is a '//' comment and it has a preceding character
+    if (p1 !== undefined) {
+      // return the preceding character
+      return p1
+    }
+    // If it's a '/* */' comment or a '//' comment at the start of a line, remove it
+    return ''
+  })
 }
 
 /**
@@ -236,6 +245,13 @@ function removeComments (funcS) {
 */
 function getEventObjectVarName (funcS) {
   return funcS.substring(funcS.indexOf('(') + 1, funcS.indexOf(')'))
+}
+
+function insertGamepadEventListenerAsync (item) {
+  return item.replace(/addEventListener\(([^,]+),\s*\(\s*([^)]*)\s*\)\s*=>\s*\{/g, function (match, event, args) {
+    // Wrap the original body in an async arrow function
+    return `addEventListener(${event}, async (${args}) => {`
+  })
 }
 
 /**
@@ -266,7 +282,7 @@ export default function rewrite (func, entity) {
       let result = temp
 
       // internal evented methods are skipped
-      if (isEvented(temp, entity) || eventedOpenParen) {
+      if ((isEvented(temp, entity) && !temp.includes('addEventListener')) || eventedOpenParen) {
         eventedOpenParen += (countChar(replaceUserStringWithBlanks(temp), '(') - countChar(replaceUserStringWithBlanks(temp), ')'))
       } else {
         // if (isPaced(temp, entity)) hasPacedCode = true
@@ -276,6 +292,7 @@ export default function rewrite (func, entity) {
 
         // and only if not a method will add async to functions
         result === temp ? result = insertAsync(temp) : null
+        result === temp ? result = insertGamepadEventListenerAsync(temp) : null
       }
 
       // insert a paced promise resolve at the start of a loop block (under certain conditions)

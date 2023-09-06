@@ -1320,6 +1320,8 @@ export default class Sprite extends Entity {
   */
   touching (sprite) {
     // const startTime = performance.now()
+    if (!sprite.showing || !this.showing) return false // If either sprite is not showing, the cannot collide
+
     const collided = this.collisionDetector.doSpritesOverlap(
       {
         image: this.costume.image,
